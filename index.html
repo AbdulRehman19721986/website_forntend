@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redox — Heavy-Duty AI Video & Voice Toolkit</title>
+<meta name="description" content="Redox: AI voice generation, video merging, your-own-footage clip styling, and script-to-video generation — by Abdul Rehman Rajpoot.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=1">
+</head>
+<body>
+
+<div class="bg-grid" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">Rx</span>
+    <div class="brand-text">
+      <span class="brand-name">REDOX</span>
+      <span class="brand-tag">video &amp; voice toolkit</span>
+    </div>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button class="tab is-active" data-tab="voice">Voice Studio</button>
+    <button class="tab" data-tab="merge">Merge Studio</button>
+    <button class="tab" data-tab="clip">Clip Studio</button>
+    <button class="tab" data-tab="generate">AI Generator</button>
+    <button class="tab" data-tab="library">Library</button>
+  </nav>
+
+  <button class="tray-toggle" id="trayToggle" aria-label="Toggle job tray">
+    <span class="tray-dot" id="trayDot"></span>
+    Jobs
+  </button>
+</header>
+
+<main class="app-main">
+
+  <!-- ───────────────────────── VOICE STUDIO ───────────────────────── -->
+  <section class="panel is-active" id="panel-voice" data-panel="voice">
+    <div class="panel-head">
+      <h1>Voice Studio</h1>
+      <p>300+ neural voices. Pick a language, dial in mood and age, preview instantly.</p>
+    </div>
+
+    <div class="grid-2">
+      <form id="voiceForm" class="card form-card">
+        <div class="field-row">
+          <label>Language
+            <select id="v-lang"></select>
+          </label>
+          <label>Voice
+            <select id="v-voice"></select>
+          </label>
+        </div>
+
+        <div class="field-row">
+          <label>Mood / Style
+            <select id="v-style"></select>
+          </label>
+          <label>Style intensity <span class="hint" id="v-styledegree-val">1.0</span>
+            <input type="range" id="v-styledegree" min="0.5" max="2" step="0.1" value="1.0">
+          </label>
+        </div>
+
+        <div class="field-row">
+          <label>Age preset
+            <div class="chip-row" id="v-age-chips"></div>
+          </label>
+        </div>
+
+        <div class="field-row">
+          <label>Rate <span class="hint" id="v-rate-val">+0%</span>
+            <input type="range" id="v-rate" min="-50" max="50" step="1" value="0">
+          </label>
+          <label>Pitch <span class="hint" id="v-pitch-val">+0Hz</span>
+            <input type="range" id="v-pitch" min="-200" max="200" step="5" value="0">
+          </label>
+        </div>
+
+        <label class="block">Script
+          <textarea id="v-text" rows="4" placeholder="Type or paste the line you want narrated…">Welcome to Redox — built for creators who ship.</textarea>
+        </label>
+
+        <div class="btn-row">
+          <button type="button" class="btn btn-ghost" id="v-preview-btn">▶ Preview voice</button>
+        </div>
+        <audio id="v-preview-audio" controls class="audio-strip hidden"></audio>
+      </form>
+
+      <div class="card form-card">
+        <h3 class="card-title">Batch Voice Generator</h3>
+        <p class="muted-sm">One line per clip. Paste a script, a list of subtitles, or a stack of ad reads — get back a zip of individually-named MP3s.</p>
+        <label class="block">Lines (one per clip)
+          <textarea id="b-lines" rows="6" placeholder="Line one...&#10;Line two...&#10;Line three..."></textarea>
+        </label>
+        <div class="btn-row">
+          <button type="button" class="btn btn-primary" id="b-generate-btn">⚡ Generate batch</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────────────────────── MERGE STUDIO ───────────────────────── -->
+  <section class="panel" id="panel-merge" data-panel="merge">
+    <div class="panel-head">
+      <h1>Merge Studio</h1>
+      <p>Stitch your clips together with real transitions, narration, background music, and a watermark — in one render.</p>
+    </div>
+
+    <form id="mergeForm" class="card form-card wide">
+      <label class="block">Video clips <span class="hint">(in the order they should play)</span>
+        <input type="file" id="m-videos" accept="video/*" multiple required>
+      </label>
+
+      <div class="field-row">
+        <label>Aspect ratio
+          <select id="m-aspect"><option value="vertical">Vertical 9:16</option><option value="horizontal">Horizontal 16:9</option><option value="square">Square 1:1</option></select>
+        </label>
+        <label>Transition between clips
+          <select id="m-transition"><option value="none">Hard cut</option><option value="fade">Fade</option><option value="crossfade">Crossfade</option></select>
+        </label>
+      </div>
+
+      <div class="field-row">
+        <label>Audio source
+          <select id="m-audiosource"><option value="script">Generate narration from script</option><option value="upload">Upload audio file</option><option value="none">No audio overlay</option></select>
+        </label>
+        <label>Trim to shortest track
+          <div class="chip-row"><label class="chip"><input type="checkbox" id="m-trim" checked> on</label></div>
+        </label>
+      </div>
+
+      <label class="block" id="m-script-wrap">Narration script
+        <textarea id="m-script" rows="3" placeholder="What should the voiceover say over these clips?"></textarea>
+      </label>
+      <label class="block hidden" id="m-audio-upload-wrap">Voiceover / audio file
+        <input type="file" id="m-audiofile" accept="audio/*">
+      </label>
+
+      <div class="field-row">
+        <label>Narration voice
+          <select id="m-voice"></select>
+        </label>
+        <label>Background music <span class="hint">(optional)</span>
+          <input type="file" id="m-bgmusic" accept="audio/*">
+        </label>
+      </div>
+
+      <div class="field-row">
+        <label>Watermark text <span class="hint">(optional)</span>
+          <input type="text" id="m-watermark" placeholder="@yourhandle">
+        </label>
+        <label>Also export
+          <div class="chip-row">
+            <label class="chip"><input type="checkbox" value="square" class="m-export"> Square</label>
+            <label class="chip"><input type="checkbox" value="horizontal" class="m-export"> Horizontal</label>
+            <label class="chip"><input type="checkbox" value="vertical" class="m-export"> Vertical</label>
+          </div>
+        </label>
+      </div>
+
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary">⚡ Merge &amp; render</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ───────────────────────── CLIP STUDIO ───────────────────────── -->
+  <section class="panel" id="panel-clip" data-panel="clip">
+    <div class="panel-head">
+      <h1>Clip Studio</h1>
+      <p>Slice your own footage into shorts-ready segments and apply a creative style pack — crop, mirror, zoom, speed, pitch, watermark.</p>
+      <p class="note-box">Upload-only by design: Clip Studio works on video files <em>you provide</em>. There's no URL field and no downloader here — it's a styling tool for your own raw footage, not a way to repost someone else's video.</p>
+    </div>
+
+    <form id="clipForm" class="card form-card wide">
+      <label class="block">Source video <span class="hint">(your own footage)</span>
+        <input type="file" id="c-video" accept="video/*" required>
+      </label>
+
+      <div class="field-row">
+        <label>Slice mode
+          <select id="c-mode"><option value="auto">Every N seconds</option><option value="timestamps">Custom timestamps</option></select>
+        </label>
+        <label id="c-interval-wrap">Interval (seconds)
+          <input type="number" id="c-interval" value="8" min="2" max="120">
+        </label>
+        <label id="c-timestamps-wrap" class="hidden">Timestamps <span class="hint">e.g. 10-20, 35-50</span>
+          <input type="text" id="c-timestamps" placeholder="10-20, 35-50">
+        </label>
+      </div>
+
+      <h3 class="card-title small">Style pack</h3>
+      <div class="field-row">
+        <label>Aspect crop
+          <select id="c-aspect"><option value="original">Keep original</option><option value="vertical">Vertical 9:16</option><option value="horizontal">Horizontal 16:9</option><option value="square">Square 1:1</option></select>
+        </label>
+        <label>Watermark text <span class="hint">(optional)</span>
+          <input type="text" id="c-watermark" placeholder="@yourhandle">
+        </label>
+      </div>
+      <div class="field-row">
+        <label class="chip"><input type="checkbox" id="c-mirror"> Mirror</label>
+        <label class="chip"><input type="checkbox" id="c-zoom"> Subtle zoom</label>
+      </div>
+      <div class="field-row">
+        <label>Speed <span class="hint" id="c-speed-val">1.00×</span>
+          <input type="range" id="c-speed" min="0.5" max="2" step="0.01" value="1">
+        </label>
+        <label>Pitch shift <span class="hint" id="c-pitch-val">0 semitones</span>
+          <input type="range" id="c-pitch" min="-6" max="6" step="0.1" value="0">
+        </label>
+      </div>
+
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary">⚡ Slice &amp; style</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ───────────────────────── AI GENERATOR ───────────────────────── -->
+  <section class="panel" id="panel-generate" data-panel="generate">
+    <div class="panel-head">
+      <h1>AI Video Generator</h1>
+      <p>Script in, finished video out: narration, themed visuals, motion, and burned-in captions, end to end.</p>
+    </div>
+
+    <form id="genForm" class="card form-card wide">
+      <div class="step-rail">
+        <span class="step">1 · Script</span>
+        <span class="step">2 · Voice</span>
+        <span class="step">3 · Visuals</span>
+        <span class="step">4 · Captions</span>
+        <span class="step">5 · Render</span>
+      </div>
+
+      <label class="block">Script
+        <textarea id="g-script" rows="5" placeholder="One idea per sentence — each sentence becomes a slide."></textarea>
+      </label>
+
+      <div class="field-row">
+        <label>Visual theme
+          <select id="g-theme">
+            <option value="auto">Auto (per sentence)</option>
+            <option value="ai_generative">AI-generated imagery</option>
+            <option value="space">Space</option>
+            <option value="tech">Tech</option>
+            <option value="nature">Nature</option>
+            <option value="finance">Finance</option>
+            <option value="city">City</option>
+            <option value="abstract">Abstract</option>
+          </select>
+        </label>
+        <label>Aspect ratio
+          <select id="g-aspect"><option value="vertical">Vertical 9:16</option><option value="horizontal">Horizontal 16:9</option></select>
+        </label>
+      </div>
+
+      <div class="field-row">
+        <label>Voice
+          <select id="g-voice"></select>
+        </label>
+        <label>Caption style
+          <select id="g-captions">
+            <option value="classic">Classic lower-third</option>
+            <option value="karaoke">Animated karaoke (word-by-word)</option>
+            <option value="none">No burned captions</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="field-row">
+        <label>Background music <span class="hint">(optional)</span>
+          <input type="file" id="g-bgmusic" accept="audio/*">
+        </label>
+        <label>Watermark text <span class="hint">(optional)</span>
+          <input type="text" id="g-watermark" placeholder="@yourhandle">
+        </label>
+      </div>
+
+      <label>Also export
+        <div class="chip-row">
+          <label class="chip"><input type="checkbox" value="square" class="g-export"> Square</label>
+          <label class="chip"><input type="checkbox" value="horizontal" class="g-export"> Horizontal</label>
+          <label class="chip"><input type="checkbox" value="vertical" class="g-export"> Vertical</label>
+        </div>
+      </label>
+
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary">⚡ Generate video</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ───────────────────────── LIBRARY ───────────────────────── -->
+  <section class="panel" id="panel-library" data-panel="library">
+    <div class="panel-head">
+      <h1>Library</h1>
+      <p>Everything Redox has rendered for you this session.</p>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="lib-refresh">↻ Refresh</button>
+      <button class="btn btn-danger-ghost" id="lib-clear">Clear all outputs</button>
+    </div>
+    <div class="output-grid" id="lib-grid"></div>
+  </section>
+
+</main>
+
+<!-- ───────────────────────── JOB / REACTION TRAY ───────────────────────── -->
+<aside class="tray" id="tray">
+  <div class="tray-head">
+    <span>Reaction Tray</span>
+    <button class="tray-close" id="trayClose">×</button>
+  </div>
+  <div class="tray-body" id="trayBody">
+    <p class="tray-empty">No jobs yet. Kick something off from any studio tab — it'll show up here while it renders.</p>
+  </div>
+</aside>
+
+<footer class="app-footer">
+  <span>Redox · built by <strong>Abdul Rehman Rajpoot</strong></span>
+  <span class="dot">·</span>
+  <span>MIT licensed</span>
+</footer>
+
+<script src="js/app.js?v=1"></script>
+</body>
+</html>
