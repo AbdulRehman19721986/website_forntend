@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login — Redox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css?v=2">
+</head>
+<body>
+<div class="bg-grid" aria-hidden="true"></div>
+
+<div class="auth-shell">
+  <div class="auth-card card">
+    <div class="brand auth-brand">
+      <span class="brand-mark" style="background:linear-gradient(135deg, var(--amber-dim), var(--cyan-dim)); color: var(--amber);">Rx</span>
+      <div class="brand-text">
+        <span class="brand-name">REDOX</span>
+        <span class="brand-tag">admin panel · separate login</span>
+      </div>
+    </div>
+
+    <div class="auth-method-tabs">
+      <button type="button" class="is-active" data-method="password">Username + Password</button>
+      <button type="button" data-method="secret">Secret Key</button>
+    </div>
+
+    <form id="adminLoginForm" class="form-card">
+      <p id="adminError" class="auth-error hidden"></p>
+
+      <div id="passwordFields">
+        <label class="block">Admin username
+          <input type="text" id="a-username" autocomplete="username">
+        </label>
+        <label class="block">Admin password
+          <input type="password" id="a-password" autocomplete="current-password">
+        </label>
+      </div>
+
+      <div id="secretFields" class="hidden">
+        <label class="block">Secret key
+          <input type="password" id="a-secret" autocomplete="off" placeholder="Owner-only key">
+        </label>
+      </div>
+
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary" style="flex:1;">Enter admin panel</button>
+      </div>
+    </form>
+
+    <p class="auth-foot faint">Not an admin? <a href="../login.html">Member login</a></p>
+  </div>
+</div>
+
+<footer class="app-footer">
+  <span>Redox admin · <strong>Abdul Rehman Rajpoot</strong></span>
+</footer>
+
+<script>
+let method = 'password';
+document.querySelectorAll('.auth-method-tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.auth-method-tabs button').forEach(b => b.classList.remove('is-active'));
+    btn.classList.add('is-active');
+    method = btn.dataset.method;
+    document.getElementById('passwordFields').classList.toggle('hidden', method !== 'password');
+    document.getElementById('secretFields').classList.toggle('hidden', method !== 'secret');
+  });
+});
+
+document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('adminError');
+  errEl.classList.add('hidden');
+
+  const body = method === 'secret'
+    ? { secret_key: document.getElementById('a-secret').value }
+    : { username: document.getElementById('a-username').value.trim(), password: document.getElementById('a-password').value };
+
+  try {
+    const r = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Admin login failed.');
+    window.location.href = 'dashboard.html';
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.remove('hidden');
+  }
+});
+</script>
+</body>
+</html>

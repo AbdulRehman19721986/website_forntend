@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — Redox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css?v=2">
+</head>
+<body>
+<div class="bg-grid" aria-hidden="true"></div>
+
+<header class="admin-topbar">
+  <div class="brand">
+    <span class="brand-mark" style="background:linear-gradient(135deg, var(--amber-dim), var(--cyan-dim)); color: var(--amber);">Rx</span>
+    <div class="brand-text">
+      <span class="brand-name">REDOX</span>
+      <span class="brand-tag">admin dashboard</span>
+    </div>
+  </div>
+  <div class="account-widget">
+    <span class="account-name" id="adminName">…</span>
+    <button class="btn-logout" id="adminLogoutBtn" title="Log out">⏻</button>
+  </div>
+</header>
+
+<main class="admin-main">
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-num" id="statTotal">—</div><div class="stat-label">Total members</div></div>
+    <div class="stat-card accent-cyan"><div class="stat-num" id="statActive">—</div><div class="stat-label">Active</div></div>
+    <div class="stat-card accent-amber"><div class="stat-num" id="statPending">—</div><div class="stat-label">Pending approval</div></div>
+    <div class="stat-card"><div class="stat-num" id="statRenders">—</div><div class="stat-label">Total renders</div></div>
+  </div>
+
+  <div class="admin-tabs">
+    <button class="is-active" data-panel="inbox">Approval Inbox</button>
+    <button data-panel="users">All Members</button>
+    <button data-panel="create">Direct Add Member</button>
+    <button data-panel="usage">Usage Log</button>
+    <button data-panel="integrations">Integrations</button>
+  </div>
+
+  <section class="admin-panel is-active" id="adm-inbox">
+    <table class="data-table">
+      <thead><tr><th>Username</th><th>Email</th><th>Requested plan</th><th>Requested</th><th>Action</th></tr></thead>
+      <tbody id="inboxBody"><tr class="empty-row"><td colspan="5">Loading…</td></tr></tbody>
+    </table>
+  </section>
+
+  <section class="admin-panel" id="adm-users">
+    <div class="btn-row" style="margin-bottom:14px;">
+      <select id="usersFilter">
+        <option value="">All statuses</option>
+        <option value="active">Active</option>
+        <option value="pending">Pending</option>
+        <option value="rejected">Rejected</option>
+        <option value="disabled">Disabled</option>
+      </select>
+      <button class="btn btn-ghost" id="usersRefresh">↻ Refresh</button>
+    </div>
+    <table class="data-table">
+      <thead><tr><th>Username</th><th>Email</th><th>Plan</th><th>Status</th><th>Joined</th><th>Action</th></tr></thead>
+      <tbody id="usersBody"><tr class="empty-row"><td colspan="6">Loading…</td></tr></tbody>
+    </table>
+  </section>
+
+  <section class="admin-panel" id="adm-create">
+    <form id="createUserForm" class="card form-card wide">
+      <p id="createMsg" class="auth-error hidden"></p>
+      <div class="field-row">
+        <label class="block">Username<input type="text" id="cu-username" required></label>
+        <label class="block">Email<input type="email" id="cu-email" required></label>
+      </div>
+      <div class="field-row">
+        <label class="block">Password<input type="password" id="cu-password" required minlength="6"></label>
+        <label class="block">Plan
+          <select id="cu-plan"><option value="basic">Basic</option><option value="pro">Pro</option><option value="elite">Elite</option></select>
+        </label>
+      </div>
+      <p class="muted-sm">Created accounts are active immediately — no approval step.</p>
+      <div class="btn-row"><button type="submit" class="btn btn-primary">+ Create &amp; activate</button></div>
+    </form>
+  </section>
+
+  <section class="admin-panel" id="adm-usage">
+    <table class="data-table">
+      <thead><tr><th>User</th><th>File</th><th>Type</th><th>When</th></tr></thead>
+      <tbody id="usageBody"><tr class="empty-row"><td colspan="4">Loading…</td></tr></tbody>
+    </table>
+  </section>
+
+  <section class="admin-panel" id="adm-integrations">
+    <div class="integration-grid" id="integrationGrid"></div>
+    <p class="muted-sm" style="margin-top:16px;">Set API keys as environment variables on Render (Anthropic/OpenAI), not in this dashboard — keys never touch the database. WhatsApp number used on the registration screen comes from <code>WHATSAPP_NUMBER</code>.</p>
+  </section>
+</main>
+
+<script src="admin.js?v=1"></script>
+</body>
+</html>
