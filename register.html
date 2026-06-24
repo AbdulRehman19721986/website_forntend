@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register — Redox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=2">
+</head>
+<body>
+<div class="bg-grid" aria-hidden="true"></div>
+
+<div class="auth-shell">
+  <div class="auth-card card auth-card-wide" id="registerView">
+    <div class="brand auth-brand">
+      <span class="brand-mark">Rx</span>
+      <div class="brand-text">
+        <span class="brand-name">REDOX</span>
+        <span class="brand-tag">create an account</span>
+      </div>
+    </div>
+
+    <form id="registerForm" class="form-card">
+      <p id="regError" class="auth-error hidden"></p>
+
+      <div class="field-row">
+        <label class="block">Username
+          <input type="text" id="r-username" required minlength="3" maxlength="32" pattern="[a-zA-Z0-9_.]+">
+        </label>
+        <label class="block">Email
+          <input type="email" id="r-email" required>
+        </label>
+      </div>
+      <label class="block">Password <span class="hint">(6+ characters)</span>
+        <input type="password" id="r-pass" required minlength="6">
+      </label>
+
+      <label class="block">Choose a plan</label>
+      <div class="plan-grid" id="planGrid">
+        <label class="plan-card">
+          <input type="radio" name="plan" value="basic" checked>
+          <div class="plan-name">Basic</div>
+          <div class="plan-price">PKR 500<span>/mo</span></div>
+          <div class="plan-detail">5 renders / day</div>
+        </label>
+        <label class="plan-card">
+          <input type="radio" name="plan" value="pro">
+          <div class="plan-name">Pro</div>
+          <div class="plan-price">PKR 1500<span>/mo</span></div>
+          <div class="plan-detail">20 renders / day</div>
+        </label>
+        <label class="plan-card">
+          <input type="radio" name="plan" value="elite">
+          <div class="plan-name">Elite</div>
+          <div class="plan-price">PKR 3000<span>/mo</span></div>
+          <div class="plan-detail">Unlimited renders</div>
+        </label>
+      </div>
+
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary" style="flex:1;">Request account</button>
+      </div>
+    </form>
+
+    <p class="auth-foot">Already have an account? <a href="login.html">Log in</a></p>
+  </div>
+
+  <!-- ── Pending-approval screen, shown after a successful registration ── -->
+  <div class="auth-card card hidden" id="pendingView">
+    <div class="brand auth-brand">
+      <span class="brand-mark">Rx</span>
+      <div class="brand-text">
+        <span class="brand-name">REDOX</span>
+        <span class="brand-tag">request received</span>
+      </div>
+    </div>
+    <p class="pending-text">
+      Your account request is in the admin's inbox. You'll be able to log in
+      once it's approved — usually fast, but you can speed things along by
+      messaging the admin directly.
+    </p>
+    <a class="btn btn-primary whatsapp-btn" id="waBtn" target="_blank" rel="noopener">💬 Message admin on WhatsApp</a>
+    <p class="auth-foot"><a href="login.html">Back to login</a></p>
+  </div>
+</div>
+
+<footer class="app-footer">
+  <span>Redox · built by <strong>Abdul Rehman Rajpoot</strong></span>
+</footer>
+
+<script>
+const WHATSAPP_NUMBER = '923009842133';
+
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('regError');
+  errEl.classList.add('hidden');
+
+  const username = document.getElementById('r-username').value.trim();
+  const email = document.getElementById('r-email').value.trim();
+  const password = document.getElementById('r-pass').value;
+  const plan = document.querySelector('input[name="plan"]:checked').value;
+
+  try {
+    const r = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password, plan }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Registration failed.');
+
+    document.getElementById('registerView').classList.add('hidden');
+    const pendingView = document.getElementById('pendingView');
+    pendingView.classList.remove('hidden');
+
+    const planLabel = { basic: 'Basic (PKR 500)', pro: 'Pro (PKR 1500)', elite: 'Elite (PKR 3000)' }[plan];
+    const msg = `Hi! I just registered on Redox as "${username}" (${email}) for the ${planLabel} plan. Please approve my account.`;
+    document.getElementById('waBtn').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.classList.remove('hidden');
+  }
+});
+</script>
+</body>
+</html>
