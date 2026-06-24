@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://YOUR-REDOX-BACKEND.onrender.com/api/:path*"
+      "destination": "https://website-ny2e.onrender.com/api/:path*"
     }
   ],
   "headers": [
