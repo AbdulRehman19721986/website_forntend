@@ -13,16 +13,22 @@ const API = ''; // relative — see note above
 // Small fetch helpers
 // ──────────────────────────────────────────────────────────────
 async function getJSON(url) {
-  const r = await fetch(API + url);
+  const r = await fetch(API + url, { credentials: 'include' });
+  if (r.status === 401) { goToLogin(); throw new Error('Not logged in'); }
   if (!r.ok) throw new Error(`GET ${url} → ${r.status}`);
   return r.json();
 }
 
 async function postForm(url, formData) {
-  const r = await fetch(API + url, { method: 'POST', body: formData });
+  const r = await fetch(API + url, { method: 'POST', body: formData, credentials: 'include' });
+  if (r.status === 401) { goToLogin(); throw new Error('Not logged in'); }
   const body = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(body.error || `POST ${url} → ${r.status}`);
   return body;
+}
+
+function goToLogin() {
+  window.location.href = 'login.html';
 }
 
 function el(id) { return document.getElementById(id); }
@@ -39,6 +45,7 @@ qsa('.tab').forEach(tab => {
     tab.classList.add('is-active');
     el(`panel-${tab.dataset.tab}`).classList.add('is-active');
     if (tab.dataset.tab === 'library') loadLibrary();
+    if (tab.dataset.tab === 'story') checkStoryConfig();
   });
 });
 
@@ -138,6 +145,7 @@ async function loadCatalog() {
 
   populateVoiceFlat(el('m-voice'));
   populateVoiceFlat(el('g-voice'));
+  populateVoiceFlat(el('i2v-voice'));
 }
 
 function populateLangSelect(select) {
@@ -205,7 +213,7 @@ el('v-preview-btn').addEventListener('click', async () => {
     fd.append('style_degree', el('v-styledegree').value);
     fd.append('rate', el('v-rate-val').textContent);
     fd.append('pitch', el('v-pitch-val').textContent);
-    const r = await fetch(`${API}/api/preview-voice`, { method: 'POST', body: fd });
+    const r = await fetch(`${API}/api/preview-voice`, { method: 'POST', body: fd, credentials: 'include' });
     if (!r.ok) throw new Error('Preview failed');
     const blob = await r.blob();
     const audio = el('v-preview-audio');
@@ -337,6 +345,83 @@ el('genForm').addEventListener('submit', async (e) => {
 });
 
 // ──────────────────────────────────────────────────────────────
+// Story Writer
+// ──────────────────────────────────────────────────────────────
+let storyStatusChecked = false;
+async function checkStoryConfig() {
+  if (storyStatusChecked) return;
+  storyStatusChecked = true;
+  try {
+    const status = await getJSON('/api/ai-story/status');
+    if (!status.configured) {
+      const msg = el('storyConfigMsg');
+      msg.textContent = 'No AI provider key is configured yet — set ANTHROPIC_API_KEY or OPENAI_API_KEY on the backend to turn this on.';
+      msg.classList.remove('hidden');
+    }
+  } catch (e) { /* auth guard already handles redirect on 401 */ }
+}
+
+el('storyForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const topic = el('s-topic').value.trim();
+  if (!topic) return alert('Give Story Writer a topic.');
+  const btn = qs('button[type=submit]', el('storyForm'));
+  btn.disabled = true; btn.textContent = '… writing';
+  try {
+    const r = await fetch(`${API}/api/ai-story`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topic, lang: el('s-lang').value, length: el('s-length').value, tone: el('s-tone').value,
+      }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Story generation failed.');
+    el('s-result').value = data.story;
+    el('storyResultCard').classList.remove('hidden');
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '✍ Write story';
+  }
+});
+
+el('s-copy').addEventListener('click', () => {
+  navigator.clipboard.writeText(el('s-result').value).catch(() => {});
+});
+el('s-use-in-generator').addEventListener('click', () => {
+  el('g-script').value = el('s-result').value;
+  document.querySelector('.tab[data-tab="generate"]').click();
+});
+
+// ──────────────────────────────────────────────────────────────
+// Image → Video
+// ──────────────────────────────────────────────────────────────
+el('img2vidForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const images = el('i2v-images').files;
+  if (!images.length) return alert('Add at least one image.');
+
+  const fd = new FormData();
+  [...images].forEach(f => fd.append('images', f));
+  fd.append('aspect_ratio', el('i2v-aspect').value);
+  fd.append('default_duration', el('i2v-duration').value);
+  fd.append('narration', el('i2v-narration').value);
+  fd.append('voice', el('i2v-voice').value);
+  fd.append('caption_mode', el('i2v-captions').value);
+  fd.append('watermark_text', el('i2v-watermark').value);
+  fd.append('export_aspects', qsa('.i2v-export:checked').map(c => c.value).join(','));
+  if (el('i2v-bgmusic').files[0]) fd.append('bg_music_file', el('i2v-bgmusic').files[0]);
+
+  try {
+    const { job_id } = await postForm('/api/image-to-video', fd);
+    trackJob(job_id, 'image to video');
+  } catch (err) {
+    alert('Could not start image-to-video job: ' + err.message);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
 // Library
 // ──────────────────────────────────────────────────────────────
 async function loadLibrary() {
@@ -358,7 +443,7 @@ async function loadLibrary() {
         </div>
       </div>`).join('');
     qsa('[data-del]', grid).forEach(btn => btn.addEventListener('click', async () => {
-      await fetch(`${API}/api/outputs/${encodeURIComponent(btn.dataset.del)}`, { method: 'DELETE' });
+      await fetch(`${API}/api/outputs/${encodeURIComponent(btn.dataset.del)}`, { method: 'DELETE', credentials: 'include' });
       loadLibrary();
     }));
   } catch (e) {
@@ -368,12 +453,68 @@ async function loadLibrary() {
 el('lib-refresh').addEventListener('click', loadLibrary);
 el('lib-clear').addEventListener('click', async () => {
   if (!confirm('Delete every rendered file? This cannot be undone.')) return;
-  await fetch(`${API}/api/clear-library`, { method: 'POST' });
+  await fetch(`${API}/api/clear-library`, { method: 'POST', credentials: 'include' });
   loadLibrary();
+});
+
+// ──────────────────────────────────────────────────────────────
+// Auth guard + account widget
+// ──────────────────────────────────────────────────────────────
+async function bootAuth() {
+  try {
+    const r = await fetch(`${API}/api/auth/me`, { credentials: 'include' });
+    const data = await r.json();
+    if (!data.authenticated) { goToLogin(); return null; }
+    el('accountName').textContent = data.user.username;
+    el('accountPlan').textContent = data.user.plan_label;
+    return data.user;
+  } catch (e) {
+    goToLogin();
+    return null;
+  }
+}
+
+el('logoutBtn').addEventListener('click', async () => {
+  await fetch(`${API}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+  goToLogin();
+});
+
+// ──────────────────────────────────────────────────────────────
+// Image Search
+// ──────────────────────────────────────────────────────────────
+el('imgSearchForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const query = el('img-query').value.trim();
+  if (!query) return;
+  const grid = el('img-results');
+  grid.innerHTML = '<p class="lib-empty">Searching…</p>';
+  try {
+    const data = await getJSON(`/api/image-search?q=${encodeURIComponent(query)}`);
+    if (!data.images || !data.images.length) {
+      grid.innerHTML = '<p class="lib-empty">No results. Try a different search.</p>';
+      return;
+    }
+    grid.innerHTML = data.images.map(img => `
+      <div class="output-card img-result-card">
+        <img src="${img.thumb}" loading="lazy" alt="${escapeHtml(img.title)}">
+        <div class="img-meta">
+          <div class="name">${escapeHtml(img.title)}</div>
+          <div class="meta">${img.width}×${img.height}</div>
+          <div class="actions">
+            <a class="btn btn-ghost" href="${API}/api/image-download?token=${encodeURIComponent(img.token)}" target="_blank" rel="noopener">⬇ Download</a>
+          </div>
+        </div>
+      </div>`).join('');
+  } catch (err) {
+    grid.innerHTML = `<p class="lib-empty">Search failed: ${escapeHtml(err.message)}</p>`;
+  }
 });
 
 // ──────────────────────────────────────────────────────────────
 // Boot
 // ──────────────────────────────────────────────────────────────
 updateSliderLabels();
-loadCatalog().catch(e => console.error('Failed to load voice catalog:', e));
+bootAuth().then(user => {
+  if (!user) return;
+  loadCatalog().catch(e => console.error('Failed to load voice catalog:', e));
+});
